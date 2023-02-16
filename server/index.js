@@ -40,7 +40,7 @@ io.use((socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("User connected = ",socket);
+  // console.log("User connected = ",socket);
   // persist session
   sessionStore.saveSession(socket.sessionID, {
     userID: socket.userID,
@@ -77,7 +77,7 @@ io.on("connection", (socket) => {
       messages: messagesPerUser.get(session.userID) || [],
     });
   });
-  socket.emit("users", users);
+  io.emit("users", users);
 
   // notify existing users
   socket.broadcast.emit("user connected", {
@@ -96,6 +96,7 @@ io.on("connection", (socket) => {
       to:to,
     };
     socket.to(to).to(socket.userID).emit("private message", message);
+    console.log("emitted");
     messageStore.saveMessage(message);
   });
 

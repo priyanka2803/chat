@@ -7,9 +7,23 @@ const buttons = [{ label: 'first', value: '1' }, { label: 'second', value: '2' }
 
 function App() {
   const [users, setUsers] = useState([]);
-  const [user, setUser] = useState({})
+  const [user, setUser] = useState({});
+  const [selectedUser, setSelectedUser] = useState({});
+  let devUsername;
+
   useEffect(() => {
     const username = prompt("Enter name");
+    devUsername = prompt("Enter name of developer");
+
+    for(let i=0;i<users.length;i++)
+    {
+      console.log("message user = ",users[i]);
+      if(users[i].username===devUsername)
+      {
+        setSelectedUser(users[i]);
+        break;
+      }
+    }
     console.log(username);
     socket.auth = {username};
     socket.connect();
@@ -18,87 +32,67 @@ function App() {
 
     socket.on("private message", ({ content, from }) => {
       console.log("Private message from server",content);
-      for (let i = 0; i < this.users.length; i++) {
-        const user = this.users[i];
-        if (user.userID === from) {
-          user.messages.push({
-            content,
-            fromSelf: false,
-          });
-          if (user !== this.selectedUser) {
-            user.hasNewMessages = true;
-          }
-          break;
-        }
-      }
+      // for (let i = 0; i < users.length; i++) {
+      //   const u = users[i];
+      //   // if (u.userID === from) {
+      //   //   console.log("Private message from server for self",content);
+      //   //   if(!user.messages)
+      //   //   user.messages=[];
+      //   //   user.messages.push({
+      //   //     content,
+      //   //     fromSelf: false,
+      //   //   });
+      //   //   if (user !== selectedUser) {
+      //   //     user.hasNewMessages = true;
+      //   //   }
+      //   //   break;
+      //   // }
+      // }
+      addResponseMessage(content);
     });
     return () => {
       socket.off("connect_error");
     };
   }, []);
 
-  socket.on("user connected", (user) => {
-    users.push(user);
-    setUsers(users);
-    console.log("users = ",users);
-  });
+  // socket.on("user connected", (u) => {
+  //   console.log("users = ",users);
+  //   users.push(u);
+  //   setUsers(users);
+  // });
 
-  socket.on("users", (users) => {
-    users.forEach((user) => {
-      user.self = user.userID === socket.id;
-      setUser(user);
+  socket.on("users", (us) => {
+    us.forEach((u) => {
+      if(u.username===devUsername)
+      setSelectedUser(u);
+      u.self = u.userID === socket.id;
+      // return u;
     });
     // put the current user first, and then sort by username
-    this.users = users.sort((a, b) => {
+    // setUsers(
+      let temp = us.sort((a, b) => {
       if (a.self) return -1;
       if (b.self) return 1;
       if (a.username < b.username) return -1;
       return a.username > b.username ? 1 : 0;
     });
+    setUsers(temp);
+    console.log("users = ",users);
   });
 
-  socket.on("private message", ({ content, from }) => {
-    console.log("Private message from server top",content);
 
-    for (let i = 0; i < users.length; i++) {
-      const user = users[i];
-      if (user.userID === from) {
-        console.log("Private message from server",content);
-        if(!user.messages)
-        user.messages=[];
-        user.messages.push({
-          content,
-          fromSelf: false,
-        });
-        if (user !== this.selectedUser) {
-          user.hasNewMessages = true;
-        }
-        break;
-      }
-    }
-  });
   const onMessage = (content) => {
-    console.log("message = ",content);
-    let to;
-    // if (this.selectedUser) {
-      for(let i=0;i<users.length;i++)
-      {
-        console.log("message user = ",users[i]);
-        if(users[i].username=="ghi")
-        {
-          to=users[i].userID;
-          break;
-        }
-      }
+    // console.log("message = ",content);
+    if (selectedUser) {
       socket.emit("private message", {
         content,
-        to: to,
+        to: selectedUser.userID,
       });
       // this.selectedUser.messages.push({
       //   content,
       //   fromSelf: true,
       // });
-    // }
+    }
   }
 
   const handleNewUserMessage = newMessage => {
@@ -107,23 +101,18 @@ function App() {
     // Now send the message throught the backend API
   };
 
-  const handleQuickButtonClicked = data => {
-    console.log(data);
-    setQuickButtons(buttons.filter(button => button.value !== data));
-  };
 
   useEffect(() => {
-    addResponseMessage('Welcome to this awesome chat!');
-    setQuickButtons(buttons);
+    // addResponseMessage('Welcome to this awesome chat!');
+    // setQuickButtons(buttons);
   }, []);
 
   return (
     <div className="App">
       <Widget
         handleNewUserMessage={handleNewUserMessage}
-        handleQuickButtonClicked={handleQuickButtonClicked}
-        title="Polls"
-        subtitle="Polls Demo"
+        title="Chat"
+        subtitle="with Developer"
       />
     </div>
   );
